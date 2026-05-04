@@ -73,7 +73,20 @@ def index():
                 # to the actual website. So we use a reliable placeholder image that fits the pastel theme,
                 # or extract thumbnail if available.
                 img_elem = item.select_one('img')
-                image_url = img_elem.get('src') if img_elem and img_elem.has_attr('src') and img_elem['src'].startswith('http') else "https://images.unsplash.com/photo-1495147466023-e6a494129bb1?auto=format&fit=crop&w=600&q=80"
+                image_url = None
+                
+                if img_elem:
+                    # Bing often hides real images in data-src for lazy loading, or uses data URIs
+                    src = img_elem.get('data-src') or img_elem.get('src')
+                    if src and (src.startswith('http') or src.startswith('data:image')):
+                        # Upgrade HTTP to HTTPS to prevent Vercel mixed-content blocking
+                        if src.startswith('http://'):
+                            src = src.replace('http://', 'https://', 1)
+                        image_url = src
+                        
+                # Provide a beautiful fallback if no valid image was found
+                if not image_url:
+                    image_url = "https://images.unsplash.com/photo-1495147466023-e6a494129bb1?auto=format&fit=crop&w=600&q=80"
                 
                 # Group them together into a single structured object
                 recipes.append({
