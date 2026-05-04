@@ -75,7 +75,7 @@
                         htmlContent += `
                             <div class="recipe-tile">
                                 <div class="tile-header">
-                                    <h3>${recipe.title}</h3>
+                                    <h3><a href="${recipe.link}" target="_blank" style="text-decoration: none; color: inherit;">${recipe.title}</a></h3>
                                     ${recipe.category ? `<span class="category-badge">${recipe.category}</span>` : ''}
                                 </div>
                                 ${recipe.image ? `<img src="${recipe.image}" alt="${recipe.title}">` : '<p style="margin-bottom: 1rem; color: var(--text-secondary);"><i>No image found</i></p>'}

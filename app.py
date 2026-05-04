@@ -28,86 +28,72 @@ def classify_recipe(text):
 def index():
     # Check if the form was submitted (POST request)
     if request.method == 'POST':
-        # Get the URL entered by the user. 
-        # We handle both JSON data (from JS fetch) and standard form data.
+        # Get the search query entered by the user
         if request.is_json:
-            url = request.json.get('blog_url')
+            query = request.json.get('search_query')
         else:
-            url = request.form.get('blog_url')
+            query = request.form.get('search_query')
             
-        if not url:
-            # Return a JSON error if no URL was provided
-            return jsonify({"error": "No URL provided"}), 400
+        if not query:
+            return jsonify({"error": "No search query provided"}), 400
             
-        # Basic error handling: Check for an invalid URL
-        if not url.startswith('http://') and not url.startswith('https://'):
-            return jsonify({"error": "Invalid URL. Please include http:// or https://"}), 400
-            
-        # --- SOCIAL MEDIA RESTRICTION ---
-        # We explicitly block scraping social media sites (like Instagram or Facebook).
-        # Why? 
-        # 1. Dynamic Rendering: They use heavy JavaScript to load content. Simple scraping tools 
-        #    like 'requests' and 'BeautifulSoup' cannot read JS-rendered data.
-        # 2. Login Walls & Anti-Bot: These platforms actively block bots and require authentication.
-        # 3. Terms of Service: Scraping user data often violates their strict terms.
-        if 'instagram.com' in url or 'facebook.com' in url:
-            return jsonify({
-                "error": "Social media sites cannot be scraped directly due to login walls and anti-bot measures. Please use a public food blog or enter the recipe manually."
-            }), 400
-        
         try:
-            # 1. Fetch the webpage HTML using requests
-            headers = {'User-Agent': 'Mozilla/5.0'}
-            response = requests.get(url, headers=headers, timeout=10)
+            # 1. Fetch search results from Bing (acting as our scraper for various websites)
+            headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}
+            # We add "+recipe" to ensure we get food recipes
+            search_url = f"https://www.bing.com/search?q={query}+recipe"
+            response = requests.get(search_url, headers=headers, timeout=10)
             response.raise_for_status() 
             
-            # 2. Parse the HTML content using BeautifulSoup
+            # 2. Parse the search engine HTML content using BeautifulSoup
             soup = BeautifulSoup(response.text, 'html.parser')
             
-            # 3. Extract and group related data (Title, Image, Description)
+            # 3. Extract and group related data (Title, Image, Description) from different websites
             recipes = []
             
-            # Find all headings (h1 or h2) to act as the starting point for each recipe
-            for heading in soup.find_all(['h1', 'h2']):
-                title = heading.get_text().strip()
-                if not title:
-                    continue  # Skip empty headings
+            # In Bing, search results are stored in list items with class 'b_algo'
+            for item in soup.select('li.b_algo')[:6]: # Let's get top 6 results
+                # Find the title (usually an <h2> containing an <a> tag)
+                title_elem = item.select_one('h2 a')
+                if not title_elem:
+                    continue
+                    
+                title = title_elem.get_text().strip()
+                link = title_elem.get('href')
                 
-                # Find the nearest image AFTER this heading
-                # .find_next('img') searches the HTML immediately following the heading
-                img_tag = heading.find_next('img')
-                image_url = img_tag.get('src') if img_tag else ""
-                
-                # We only keep absolute URLs for simplicity
-                if image_url and not image_url.startswith('http'):
-                    image_url = ""
-                
-                # Find the nearest paragraph AFTER this heading for the description
-                p_tag = heading.find_next('p')
-                description = p_tag.get_text().strip() if p_tag else ""
+                # Find the description snippet
+                desc_elem = item.select_one('.b_caption p')
+                description = desc_elem.get_text().strip() if desc_elem else "No description available."
                 
                 # Classify the recipe based on title and description
                 combined_text = title + " " + description
                 category = classify_recipe(combined_text)
+                
+                # For search engine scraping, extracting high quality images is difficult without navigating
+                # to the actual website. So we use a reliable placeholder image that fits the pastel theme,
+                # or extract thumbnail if available.
+                img_elem = item.select_one('img')
+                image_url = img_elem.get('src') if img_elem and img_elem.has_attr('src') and img_elem['src'].startswith('http') else "https://images.unsplash.com/photo-1495147466023-e6a494129bb1?auto=format&fit=crop&w=600&q=80"
                 
                 # Group them together into a single structured object
                 recipes.append({
                     "title": title,
                     "image": image_url,
                     "description": description,
-                    "category": category
+                    "category": category,
+                    "link": link
                 })
             
             # Basic error handling: If no recipes were found, return a simple error message
             if len(recipes) == 0:
-                return jsonify({"error": "No data found."}), 404
+                return jsonify({"error": f"No recipes found for '{query}'."}), 404
                 
             # Return the structured data as a JSON response
             return jsonify({"recipes": recipes})
             
         except Exception as e:
             # If an error occurs, return it as JSON
-            return jsonify({"error": f"Error fetching the URL: {str(e)}"}), 500
+            return jsonify({"error": f"Error performing search: {str(e)}"}), 500
 
     # For a normal page visit (GET request), just render the empty frontend template
     return render_template('index.html')
