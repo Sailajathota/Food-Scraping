@@ -38,61 +38,94 @@ def index():
             return jsonify({"error": "No search query provided"}), 400
             
         try:
-            # 1. Fetch search results from Bing (acting as our scraper for various websites)
-            headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}
-            # We add "+recipe" to ensure we get food recipes
-            search_url = f"https://www.bing.com/search?q={query}+recipe"
-            response = requests.get(search_url, headers=headers, timeout=10)
-            response.raise_for_status() 
-            
-            # 2. Parse the search engine HTML content using BeautifulSoup
-            soup = BeautifulSoup(response.text, 'html.parser')
-            
-            # 3. Extract and group related data (Title, Image, Description) from different websites
-            recipes = []
-            
-            # In Bing, search results are stored in list items with class 'b_algo'
-            for item in soup.select('li.b_algo')[:6]: # Let's get top 6 results
-                # Find the title (usually an <h2> containing an <a> tag)
-                title_elem = item.select_one('h2 a')
-                if not title_elem:
-                    continue
+            # --- DUAL FUNCTIONALITY: URL SCRAPING OR INGREDIENT SEARCH ---
+            if query.startswith('http://') or query.startswith('https://'):
+                # ---------------------------------------------
+                # 1. ORIGINAL FEATURE: Scrape a specific blog
+                # ---------------------------------------------
+                
+                # Check for social media restrictions
+                if 'instagram.com' in query or 'facebook.com' in query:
+                    return jsonify({
+                        "error": "Social media sites cannot be scraped directly due to login walls. Please enter a different blog URL or a search ingredient."
+                    }), 400
                     
-                title = title_elem.get_text().strip()
-                link = title_elem.get('href')
+                headers = {'User-Agent': 'Mozilla/5.0'}
+                response = requests.get(query, headers=headers, timeout=10)
+                response.raise_for_status() 
                 
-                # Find the description snippet
-                desc_elem = item.select_one('.b_caption p')
-                description = desc_elem.get_text().strip() if desc_elem else "No description available."
+                soup = BeautifulSoup(response.text, 'html.parser')
+                recipes = []
                 
-                # Classify the recipe based on title and description
-                combined_text = title + " " + description
-                category = classify_recipe(combined_text)
+                for heading in soup.find_all(['h1', 'h2']):
+                    title = heading.get_text().strip()
+                    if not title:
+                        continue 
+                    
+                    img_tag = heading.find_next('img')
+                    image_url = img_tag.get('src') if img_tag else ""
+                    if image_url and not image_url.startswith('http'):
+                        image_url = ""
+                    
+                    p_tag = heading.find_next('p')
+                    description = p_tag.get_text().strip() if p_tag else "No description available."
+                    
+                    combined_text = title + " " + description
+                    category = classify_recipe(combined_text)
+                    
+                    recipes.append({
+                        "title": title,
+                        "image": image_url,
+                        "description": description,
+                        "category": category,
+                        "link": query
+                    })
+                    
+            else:
+                # ---------------------------------------------
+                # 2. NEW FEATURE: Search and scrape from various sites
+                # ---------------------------------------------
+                headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}
+                search_url = f"https://www.bing.com/search?q={query}+recipe"
+                response = requests.get(search_url, headers=headers, timeout=10)
+                response.raise_for_status() 
                 
-                # To ensure beautiful, accurate images for every single recipe, 
-                # we generate a dynamic image URL based on the scraped recipe title!
-                import urllib.parse
-                safe_title = urllib.parse.quote(title + " recipe")
-                image_url = f"https://tse1.mm.bing.net/th?q={safe_title}&w=600&h=400&c=7&rs=1&p=0&dpr=3&pid=1.7"
+                soup = BeautifulSoup(response.text, 'html.parser')
+                recipes = []
                 
-                # Group them together into a single structured object
-                recipes.append({
-                    "title": title,
-                    "image": image_url,
-                    "description": description,
-                    "category": category,
-                    "link": link
-                })
+                for item in soup.select('li.b_algo')[:6]: 
+                    title_elem = item.select_one('h2 a')
+                    if not title_elem:
+                        continue
+                        
+                    title = title_elem.get_text().strip()
+                    link = title_elem.get('href')
+                    
+                    desc_elem = item.select_one('.b_caption p')
+                    description = desc_elem.get_text().strip() if desc_elem else "No description available."
+                    
+                    combined_text = title + " " + description
+                    category = classify_recipe(combined_text)
+                    
+                    import urllib.parse
+                    safe_title = urllib.parse.quote(title + " recipe")
+                    image_url = f"https://tse1.mm.bing.net/th?q={safe_title}&w=600&h=400&c=7&rs=1&p=0&dpr=3&pid=1.7"
+                    
+                    recipes.append({
+                        "title": title,
+                        "image": image_url,
+                        "description": description,
+                        "category": category,
+                        "link": link
+                    })
             
-            # Basic error handling: If no recipes were found, return a simple error message
+            # Common error handling
             if len(recipes) == 0:
                 return jsonify({"error": f"No recipes found for '{query}'."}), 404
                 
-            # Return the structured data as a JSON response
             return jsonify({"recipes": recipes})
             
         except Exception as e:
-            # If an error occurs, return it as JSON
             return jsonify({"error": f"Error performing search: {str(e)}"}), 500
 
     # For a normal page visit (GET request), just render the empty frontend template
