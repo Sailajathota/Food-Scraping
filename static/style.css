@@ -1,0 +1,250 @@
+/* Light Pastel Theme Variables */
+:root {
+    --primary-color: #ffb4a2; /* Pastel salmon/peach */
+    --primary-hover: #ff9a85;
+    --bg-color: #fdfaf6; /* Very light, warm pastel cream */
+    --card-bg: #ffffff;
+    --text-primary: #334155;
+    --text-secondary: #64748b;
+    --border-color: #e2e8f0;
+    --focus-ring: rgba(255, 180, 162, 0.5);
+    --error-color: #ef4444;
+    --category-bg: #e2ece9; /* Pastel mint green for category badges */
+    --category-text: #2d6a4f;
+}
+
+/* Reset default margins and set our modern font */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Inter', sans-serif;
+}
+
+/* Base body styling with a soft pastel gradient background */
+body {
+    background-color: var(--bg-color);
+    color: var(--text-primary);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 4rem 1rem;
+    background-image: radial-gradient(circle at top right, #fff1e6, transparent 50%),
+                      radial-gradient(circle at bottom left, #e2ece9, transparent 50%);
+}
+
+/* Main container to center content and limit width */
+.container {
+    width: 100%;
+    max-width: 1000px; /* Wider container to accommodate the tile grid */
+    margin: 0 auto;
+}
+
+/* Header animations and spacing */
+header {
+    text-align: center;
+    margin-bottom: 3rem;
+    animation: slideDown 0.6s ease-out;
+}
+
+/* Main heading */
+h1 {
+    font-size: 2.8rem;
+    font-weight: 800;
+    margin-bottom: 0.5rem;
+    color: #475569;
+    letter-spacing: -0.5px;
+}
+
+header p {
+    color: var(--text-secondary);
+    font-size: 1.1rem;
+}
+
+/* Form styling with soft pastel shadows */
+.url-form {
+    background: var(--card-bg);
+    padding: 2.5rem;
+    border-radius: 20px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.03);
+    border: 1px solid var(--border-color);
+    animation: fadeIn 0.8s ease-out;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.input-group {
+    margin-bottom: 1.5rem;
+}
+
+.input-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    font-size: 0.95rem;
+}
+
+/* Input field styling */
+.input-group input, .input-group textarea {
+    width: 100%;
+    padding: 1rem;
+    border-radius: 12px;
+    border: 2px solid var(--border-color);
+    background: #f8fafc;
+    color: var(--text-primary);
+    font-size: 1rem;
+    transition: all 0.3s ease;
+}
+
+/* Micro-animations on focus */
+.input-group input:focus, .input-group textarea:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    background: #ffffff;
+    box-shadow: 0 0 0 4px var(--focus-ring);
+}
+
+/* Stylish submit button */
+.submit-btn {
+    width: 100%;
+    padding: 1rem;
+    border: none;
+    border-radius: 12px;
+    background: var(--primary-color);
+    color: #fff;
+    font-size: 1.1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 14px rgba(255, 180, 162, 0.4);
+}
+
+/* Button hover effects */
+.submit-btn:hover {
+    background: var(--primary-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(255, 180, 162, 0.6);
+}
+
+.submit-btn:active {
+    transform: translateY(0);
+}
+
+/* Styling for the error cards */
+.error-card {
+    background: var(--card-bg);
+    padding: 2rem;
+    border-radius: 20px;
+    border: 2px solid var(--error-color);
+    box-shadow: 0 10px 30px rgba(239, 68, 68, 0.1);
+    margin-top: 2rem;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.error-card h2 {
+    color: var(--error-color);
+    margin-bottom: 0.5rem;
+}
+
+.error-msg {
+    color: #b91c1c;
+    font-weight: 500;
+}
+
+/* --- TILE GRID LAYOUT --- */
+.results-header {
+    text-align: center;
+    margin-top: 3rem;
+    margin-bottom: 1.5rem;
+    font-size: 2rem;
+    color: var(--text-primary);
+    animation: fadeIn 0.6s ease-out;
+}
+
+.results-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 2rem;
+    animation: fadeIn 0.8s ease-out;
+}
+
+.recipe-tile {
+    background: var(--card-bg);
+    border-radius: 20px;
+    padding: 1.5rem;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.04);
+    border: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.recipe-tile:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.08);
+}
+
+.tile-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+    gap: 1rem;
+}
+
+.recipe-tile h3 {
+    font-size: 1.3rem;
+    color: var(--text-primary);
+    line-height: 1.3;
+    margin: 0;
+}
+
+.category-badge {
+    background: var(--category-bg);
+    color: var(--category-text);
+    padding: 0.3rem 0.8rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.recipe-tile img {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+    border-radius: 12px;
+    margin-bottom: 1rem;
+}
+
+.recipe-tile .scraped-text {
+    color: var(--text-secondary);
+    line-height: 1.6;
+    font-size: 0.95rem;
+    flex-grow: 1; /* Pushes the text to fill available space so tiles stretch nicely */
+    
+    /* Optional: limit lines if text is too long */
+    display: -webkit-box;
+    -webkit-line-clamp: 4;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* Keyframe animations for a dynamic feel */
+@keyframes slideDown {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.fade-in {
+    animation: fadeIn 0.6s ease-out;
+}

@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Food Blog Analyzer</title>
+    <!-- Link to our custom CSS file served by Flask -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <!-- Import a beautiful modern font from Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <!-- Main header section -->
+        <header>
+            <h1>Food Blog Analyzer</h1>
+            <p>Discover recipes and insights from your favorite food blogs.</p>
+        </header>
+
+        <main>
+            <!-- Form to collect the search query. Uses javascript to submit without reloading -->
+            <form id="scrape-form" class="url-form">
+                <div class="input-group">
+                    <label for="search_query">Search Dish or Main Ingredient</label>
+                    <input 
+                        type="text" 
+                        id="search_query" 
+                        name="search_query" 
+                        placeholder="e.g., chicken, pasta, chocolate..." 
+                        required
+                    >
+                </div>
+                <button type="submit" class="submit-btn" id="submit-btn">Find Recipes</button>
+            </form>
+
+            <!-- Container where the structured JSON results will be dynamically injected -->
+            <div id="results-container"></div>
+        </main>
+    </div>
+
+    <!-- Simple JavaScript to call the backend API and render results dynamically -->
+    <script>
+        // Listen for the form submission
+        document.getElementById('scrape-form').addEventListener('submit', function(event) {
+            // 1. Prevent the page from reloading
+            event.preventDefault(); 
+            
+            const btn = document.getElementById('submit-btn');
+            const queryInput = document.getElementById('search_query').value;
+            const resultsContainer = document.getElementById('results-container');
+            
+            // Show a loading state
+            btn.textContent = 'Searching...';
+            btn.disabled = true;
+            resultsContainer.innerHTML = '';
+            
+            // 2. Call the backend API using simple vanilla JavaScript (Fetch API)
+            fetch('/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ search_query: queryInput })
+            })
+            .then(response => response.json()) // Parse the JSON response
+            .then(data => {
+                // 3. Render results dynamically
+                if (data.error) {
+                    resultsContainer.innerHTML = `<div class="result-card error-card"><h2>Error</h2><p class="error-msg">${data.error}</p></div>`;
+                } else if (data.recipes && data.recipes.length > 0) {
+                    
+                    let htmlContent = `<h2 class="results-header fade-in">Found Recipes</h2>
+                                       <div class="results-grid">`;
+                    
+                    // Loop through each recipe in the structured JSON
+                    data.recipes.forEach(recipe => {
+                        htmlContent += `
+                            <div class="recipe-tile">
+                                <div class="tile-header">
+                                    <h3>${recipe.title}</h3>
+                                    ${recipe.category ? `<span class="category-badge">${recipe.category}</span>` : ''}
+                                </div>
+                                ${recipe.image ? `<img src="${recipe.image}" alt="${recipe.title}">` : '<p style="margin-bottom: 1rem; color: var(--text-secondary);"><i>No image found</i></p>'}
+                                <p class="scraped-text">${recipe.description ? recipe.description : '<i>No description found</i>'}</p>
+                            </div>
+                        `;
+                    });
+                    
+                    htmlContent += `</div>`;
+                    
+                    // Inject the generated HTML into the container
+                    resultsContainer.innerHTML = htmlContent;
+                }
+            })
+            .catch(error => {
+                resultsContainer.innerHTML = `<div class="result-card error-card"><h2>Error</h2><p class="error-msg">Failed to connect to backend.</p></div>`;
+            })
+            .finally(() => {
+                // Reset the button back to its original state
+                btn.textContent = 'Find Recipes';
+                btn.disabled = false;
+            });
+        });
+    </script>
+</body>
+</html>
